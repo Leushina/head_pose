@@ -8,6 +8,8 @@ as well as camera parameters approximation.
 
 
 ### 1. To run this script 
+Before running, make sure that you have "shape_predictor_68_face_landmarks.dat" file with pretrained model for landmarks in the same folder as the script.
+
 
 To process video from your webcam (to exit, press 'q'): 
 ```
