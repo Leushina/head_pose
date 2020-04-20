@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import cv2
 import dlib
+import os
 
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
@@ -94,35 +95,33 @@ def process_video(camera_port=0):
         (150.0, -150.0, -125.0)  # Right mouth corner
 
     ])
-    camera_matrix = None
-    # print("Camera Matrix :\n {0}".format(camera_matrix))
+    _, frame = video_capture.read()
+    size = frame.shape
+    focal_length = size[1]
+    center = (size[1] / 2, size[0] / 2)
+    camera_matrix = np.array(
+        [[focal_length, 0, center[0]],
+         [0, focal_length, center[1]],
+         [0, 0, 1]], dtype="double"
+    )
+
     while True:
         # Capture frame-by-frame
         ret, frame = video_capture.read()
-        if ret:
-            if type(camera_matrix) != np.ndarray:
-                size = frame.shape
-                focal_length = size[1]
-                center = (size[1] / 2, size[0] / 2)
-                camera_matrix = np.array(
-                    [[focal_length, 0, center[0]],
-                     [0, focal_length, center[1]],
-                     [0, 0, 1]], dtype="double"
-                )
-            if camera_port == 0:
-                frame = cv2.flip(frame, 2)
+        if not ret:  # end of the video file
+            break
+        if camera_port == 0:  # for mirror-like picture
+            frame = cv2.flip(frame, 2)
 
-            face, img = find_face(frame)
-            #  img - transformed frame for later work
-            if len(face) > 0:
-                # if found face in the frame
-                landmarks_list = find_landmarks(img, face[0])
-                frame = estimate_pose(frame, landmarks_list, model_points, camera_matrix)
+        face, img = find_face(frame)
+        #  img - transformed frame for later work
+        if len(face) > 0:
+            # if found face in the frame
+            landmarks_list = find_landmarks(img, face[0])
+            frame = estimate_pose(frame, landmarks_list, model_points, camera_matrix)
 
-            cv2.imshow('Video', frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-        else:
+        cv2.imshow('Video', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     # When everything is done, release the capture
@@ -138,7 +137,7 @@ parser.add_argument("--cam", type=int, default=None,
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    video_src = args.cam if args.cam is not None else args.video
+    video_src = args.cam if args.cam is not None else os.path.join(os.getcwd(), args.video)
     process_video(video_src)
 
 
